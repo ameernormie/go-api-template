@@ -5,8 +5,7 @@ go 1.15
 require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
-	github.com/go-pg/pg v8.0.7+incompatible
-	github.com/go-pg/pg/v10 v10.8.0 // indirect
+	github.com/go-pg/pg/v10 v10.8.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jinzhu/now v1.1.1 // indirect
 	github.com/joho/godotenv v1.3.0
