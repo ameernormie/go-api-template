@@ -9,6 +9,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/ameernormie/go-api-template/graph"
+	"github.com/ameernormie/go-api-template/graph/generated"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -26,8 +30,28 @@ type RequestQuery struct {
 	CorporationRegistrationNumber string `form:"corporation_registration_number" json:"corporation_registration_number"`
 }
 
+// Defining the Graphql handler
+func graphqlHandler() gin.HandlerFunc {
+	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+// Defining the Playground handler
+func playgroundHandler() gin.HandlerFunc {
+	h := playground.Handler("GraphQL", "/query")
+
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
 func (a *App) GetRouter() *gin.Engine {
 	r := gin.Default()
+	r.GET("/", playgroundHandler())
+	r.POST("/query", graphqlHandler())
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
