@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,13 +10,22 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/ameernormie/go-api-template/graph"
-	"github.com/ameernormie/go-api-template/graph/generated"
+	"github.com/ameernormie/go-api-template/pkg/handlers"
+	"github.com/ameernormie/go-api-template/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
+
+var host, port, gqlPath, gqlPgPath string
+var isPgEnabled bool
+
+func init() {
+	host = utils.GetEnv("GQL_SERVER_HOST")
+	port = utils.GetEnv("GQL_SERVER_PORT")
+	gqlPath = utils.GetEnv("GQL_SERVER_GRAPHQL_PATH")
+	gqlPgPath = utils.GetEnv("GQL_SERVER_GRAPHQL_PLAYGROUND_PATH")
+	isPgEnabled = utils.GetBoolEnv("GQL_SERVER_GRAPHQL_PLAYGROUND_ENABLED")
+}
 
 type App struct {
 	Db *gorm.DB
@@ -30,28 +40,16 @@ type RequestQuery struct {
 	CorporationRegistrationNumber string `form:"corporation_registration_number" json:"corporation_registration_number"`
 }
 
-// Defining the Graphql handler
-func graphqlHandler() gin.HandlerFunc {
-	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
-	}
-}
-
-// Defining the Playground handler
-func playgroundHandler() gin.HandlerFunc {
-	h := playground.Handler("GraphQL", "/query")
-
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
-	}
-}
-
 func (a *App) GetRouter() *gin.Engine {
+	endpoint := "http://" + host + ":" + port
 	r := gin.Default()
-	r.GET("/", playgroundHandler())
-	r.POST("/query", graphqlHandler())
+	if isPgEnabled {
+		r.GET("/", handlers.PlaygroundHandler(gqlPath))
+		log.Println("GraphQL Playground @ " + endpoint + gqlPgPath)
+	}
+	r.POST(gqlPath, handlers.GraphqlHandler())
+	log.Println("GraphQL @ " + endpoint + gqlPath)
+
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
@@ -63,7 +61,7 @@ func (a *App) GetRouter() *gin.Engine {
 func (a *App) Start() {
 	router := a.GetRouter()
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: router,
 	}
 

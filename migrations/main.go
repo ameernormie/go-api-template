@@ -24,6 +24,8 @@ func main() {
 		Password: Password,
 	})
 
+	defer db.Close()
+
 	err := migrations.Run(db, directory, os.Args)
 	if err != nil {
 		log.Fatalln(err)
