@@ -27,3 +27,12 @@ func GetBoolEnv(k string) (b bool) {
 	}
 	return
 }
+
+func GetDbInfo() (User, Password, Host, Port, Database string) {
+	Host = GetEnv("DB_HOST")
+	Port = GetEnv("DB_PORT")
+	User = GetEnv("DB_USER")
+	Password = GetEnv("DB_PASSWORD")
+	Database = GetEnv("DB_DATABASE")
+	return
+}
